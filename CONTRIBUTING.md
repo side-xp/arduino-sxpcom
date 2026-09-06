@@ -6,7 +6,53 @@ At Sideways Experiments, we hate doing the same thing more than once, and we lov
 
 ## Developer setup
 
-> This document is used as a template and shared in most of our projects. Projects that have a specific developer setup should overwrite this document (by adding a `CONTRIBUTING.md` file at their root), and clearly describe that setup.
+### Install
+
+`clang-format` and `cppcheck` are installed via `pip` ([Python 3](https://www.python.org) required) as prebuilt binaries:
+
+```bash
+pip install "clang-format==18.1.8" cppcheck
+```
+
+`arduino-lint` and `arduino-cli` don't have pip packages, but ship official install scripts that detect your OS/architecture automatically. They're installed into `./.tools` (gitignored):
+
+```bash
+mkdir -p ./.tools
+curl -fsSL https://raw.githubusercontent.com/arduino/arduino-lint/main/etc/install.sh | BINDIR=./.tools sh
+curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=./.tools sh
+```
+
+Then install the AVR core, which is only needed once:
+
+```bash
+./.tools/arduino-cli core update-index
+./.tools/arduino-cli core install arduino:avr
+```
+
+### Run the checks
+
+This repository ships a utility script you can run directly to perform all the formatting and checks:
+
+```bash
+./scripts/check.sh
+```
+
+### Local use
+
+The library itself if not an Arduino project. So for manual checks and actually use the library locally, you can create a symlink of this repository into an actual Arduino project.
+
+```sh
+export MSYS=winsymlinks:nativestrict
+ln -s "/path/to/cloned/arduino-sxpcom" "/path/to/Arduino/project/libraries/SXPCom"
+```
+
+On Windows, you can also use CMD to avoid any access issues:
+
+```sh
+mklink /D "C:\path\to\Arduino\project\libraries\SXPCom" "C:\path\to\cloned\arduino-sxpcom"
+```
+
+Note that putting the library into a `/libraries` folder within your Arduino project is mandatory so Arduino IDE can actually use it like an actual library imported in the project.
 
 ## Get involved!
 

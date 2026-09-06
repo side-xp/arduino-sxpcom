@@ -26,7 +26,7 @@ void setup()
     Serial.begin(9600);
 
     // Try to load an existing ID, or generate a new one for this board. This will feed the `id`
-    // variable so you can print that value 
+    // variable so you can print that value.
     loadOrGenerateID();
     printID();
     Serial.println(F("Commands: p = print ID, r = re-roll ID, c = clear ID"));
