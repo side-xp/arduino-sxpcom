@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check formatting (clang-format)
+        uses: DoozyX/clang-format-lint-action@v0.20
+        with:
+          source: '.'
+          extensions: 'h,cpp,ino'
+          clangFormatVersion: 18
+          exclude: '.git'
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Arduino Lint
+        uses: arduino/arduino-lint-action@v3
+        with:
+          compliance: strict
+          library-manager: submit
+
+  cppcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=warning,style,performance,portability \
+            --inline-suppr --std=c++11 --platform=avr8 --error-exitcode=1 \
+            -I src src examples
+
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        fqbn:
+          - arduino:avr:uno
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compile examples
+        uses: arduino/compile-sketches@v1
+        with:
+          fqbn: ${{ matrix.fqbn }}
+          sketch-paths: |
+            - examples
+          libraries: |
+            - source-path: ./
+
+  release:
+    needs: [format, lint, cppcheck, compile]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Release
+        uses: cycjimmy/semantic-release-action@v6
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/exec
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
